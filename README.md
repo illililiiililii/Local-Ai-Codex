@@ -1,13 +1,58 @@
 # Local Codex AI (Windows x64)
 
-Clone or copy the source repository to a Windows x64 computer with PowerShell available, then double-click `Start-Codex.cmd`. The launcher installs missing Node.js LTS, Codex CLI, Ollama, and project dependencies automatically. The selected Ollama model is downloaded on first use. Internet access is required; model downloads can use several gigabytes of disk space.
+Windows x64 환경에서 Codex CLI와 Ollama를 이용해 로컬 AI 코딩 도우미를 실행하는 프로젝트입니다. 처음 사용하는 컴퓨터에서는 런처가 필요한 프로그램을 확인하고, 없는 항목을 설치한 다음 선택한 AI 모델을 준비합니다.
 
-At startup, choose:
+## 빠른 시작
 
-- **Normal mode** to check/install requirements and open the project menu. Normal launches keep Codex approval and sandbox protections enabled.
-- **Install mode** to install/repair requirements and the selected model without starting Codex.
-- **Force mode** to install requirements and request a launch with approval prompts and sandbox protections disabled. You must type `FORCE` to confirm.
+1. 이 저장소를 새 컴퓨터에 복제하거나 소스 파일을 복사합니다.
+2. Windows x64와 PowerShell이 준비되어 있는지 확인합니다.
+3. `Start-Codex.cmd`를 더블 클릭합니다.
+4. 처음 실행할 때 표시되는 시작 모드를 고릅니다.
+5. 설치가 끝나면 작업할 프로젝트를 선택하거나 GitHub 저장소를 복제합니다.
 
-The project menu can clone a GitHub repository, select/resume a project, change the model, or explicitly force-start a workspace. The model menu offers recommended models and accepts any Ollama model name. The default recommendation is `gpt-oss:20b`; available memory, speed, and quality vary by model and hardware. Model choice is saved per Windows user under `%LOCALAPPDATA%\LocalCodexAI`.
+설치 및 모델 다운로드에는 인터넷 연결이 필요합니다. AI 모델은 크기에 따라 수 GB 이상의 저장 공간을 사용할 수 있으므로 디스크 여유 공간을 확인하세요.
 
-Runtime downloads and local projects are excluded from Git by `.gitignore`; a fresh clone reinstalls them. Codex conversation history remains in the current Windows user's Codex data directory. On an error, details are written to `bootstrap-error.log`.
+## 시작 모드
+
+런처를 실행하면 아래 모드 중 하나를 선택할 수 있습니다.
+
+1. **일반 모드** — Node.js LTS, Codex CLI, Ollama 등 필수 프로그램을 확인하고, 누락된 항목을 설치합니다. 이어서 프로젝트 메뉴를 표시합니다. 일반 실행에서는 Codex의 승인 및 샌드박스 보호 기능을 유지합니다.
+2. **설치 모드** — 필수 프로그램과 선택한 모델을 설치하거나 확인한 뒤 Codex를 시작하지 않고 종료합니다. 새 컴퓨터를 미리 준비할 때 사용할 수 있습니다.
+3. **강제 실행 모드** — 필수 항목을 확인한 뒤 현재 작업 폴더에서 Codex를 실행합니다. 이 모드에서는 승인 단계와 샌드박스 보호 기능이 비활성화되므로, 진행하기 전에 `FORCE`를 직접 입력해야 합니다.
+0. **종료** — 아무것도 설치하거나 실행하지 않고 런처를 종료합니다.
+
+## 프로젝트 메뉴
+
+일반 모드에서 다음 작업을 선택할 수 있습니다.
+
+- 현재 작업 폴더에서 Codex 시작
+- GitHub 저장소 주소를 입력해 저장소를 `projects` 폴더에 복제하고 시작
+- 복제해 둔 프로젝트를 선택해 시작하거나 이전 대화 이어가기
+- 현재 작업 폴더 또는 선택한 프로젝트에서 강제 실행하기
+- 사용할 Ollama 모델 변경하기
+- 런처 종료하기
+
+프로젝트에 `package.json`, `requirements.txt`, `pyproject.toml` 등의 의존성 파일이 있으면 실행 전에 해당 프로젝트에 필요한 패키지를 설치합니다. GitHub 저장소를 복제하려면 인터넷 연결이 필요합니다.
+
+## AI 모델 선택
+
+모델 선택 메뉴에서는 추천 목록에서 고르거나 Ollama에서 사용할 모델 이름을 직접 입력할 수 있습니다. 기본 모델은 `gpt-oss:20b`이며, 추천 목록에는 용량과 용도가 다른 코딩·일반·추론 모델이 포함됩니다.
+
+모델마다 메모리 요구량, 응답 속도, 결과 품질이 다릅니다. 메모리가 부족한 컴퓨터라면 상대적으로 작은 모델을 선택하세요. 선택한 모델이 컴퓨터에 없으면 런처가 Ollama를 통해 자동으로 내려받습니다. 모델 설정은 현재 Windows 사용자 계정의 `%LOCALAPPDATA%\LocalCodexAI\config.json`에 저장됩니다.
+
+## 새 컴퓨터에서 다시 설치되는 항목
+
+소스 저장소만 복제해도 런처가 필요한 프로그램과 선택 모델을 다시 준비할 수 있도록, 내려받은 런타임과 프로젝트 데이터는 Git에 포함하지 않습니다. `.gitignore`는 다음과 같은 로컬 파일을 제외합니다.
+
+- `tools`, `projects`, `ollama` 폴더
+- 로그 및 현재 선택 프로젝트 같은 로컬 상태 파일
+- Node/Python 패키지, 가상 환경, 캐시
+- 실행 파일, 압축 파일, 대형 모델·체크포인트 파일
+
+따라서 컴퓨터를 바꿀 때는 소스 저장소를 새 환경에 복제한 뒤 `Start-Codex.cmd`를 실행하면 됩니다. 이전 컴퓨터에서 사용하던 모델 파일이나 설치 프로그램을 소스 코드와 함께 옮길 필요는 없습니다. Codex 대화 기록은 Windows 사용자 계정의 Codex 데이터 위치에 보관되며, 이 저장소에 복사되지 않습니다.
+
+## 문제 해결
+
+런처 설치나 실행 중 오류가 발생하면 저장소 폴더에 생성된 `bootstrap-error.log`를 확인하세요. 로그에는 오류 시각과 PowerShell 오류 정보가 기록됩니다. 설치 단계에서 실패하면 인터넷 연결과 디스크 여유 공간을 확인한 뒤 다시 실행하고, 특정 프로젝트에서만 문제가 발생한다면 그 프로젝트의 의존성 파일도 확인하세요.
+
+> 현재 자동 설치 및 런처 동작은 Windows x64 기준입니다. macOS와 Linux는 지원하지 않습니다.
