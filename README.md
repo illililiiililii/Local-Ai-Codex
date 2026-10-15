@@ -24,11 +24,11 @@ PowerShell 콘솔 런처를 Python GUI 통합 앱으로 전환한 Windows용 로
 
 ## ChatGPT 데스크톱과 로컬 모델
 
-새 ChatGPT 데스크톱 앱의 **Codex** 화면은 Ollama와 LM Studio 로컬 제공자를 지원합니다. 이 앱의 **ChatGPT 연동** 탭에서 제공자를 고르고 **선택 제공자 적용**을 누르면 사용자 설정 파일 `~/.codex/config.toml`에 `oss_provider`를 저장합니다. Codex 모델 선택기에서 OpenAI 클라우드 모델과 로컬 모델을 오갈 수 있습니다. 적용 뒤에는 ChatGPT 데스크톱 앱을 다시 시작하세요.
+Ollama v0.34.0 이상은 ChatGPT 데스크톱의 **Codex** 모델 선택기에 Ollama 모델을 추가하는 공식 연동을 제공합니다. **ChatGPT 연동** 탭에서 Ollama 모델을 설치한 뒤 **선택 모델을 ChatGPT에 추가**를 누르세요. 앱은 Ollama의 `ollama launch chatgpt --config --model <모델>` 명령을 사용해 로컬 모델을 추가하고 기존 클라우드 모델도 선택기 목록에 유지합니다. 설정한 로컬 모델이 Codex의 시작 모델이 되며, 필요할 때 모델 선택기에서 클라우드 모델로 전환할 수 있습니다. 설정 후 ChatGPT 데스크톱 앱을 직접 다시 시작해야 목록이 갱신됩니다.
 
 - **ChatGPT 연동** 탭에서 ChatGPT 실행 파일(`.exe`) 또는 바로 가기(`.lnk`)를 한 번 등록하고 바로 엽니다.
 - **로컬 채팅** 탭에서는 Ollama API(`http://127.0.0.1:11434`)와 선택한 로컬 모델을 사용합니다. 대화는 ChatGPT 기록과 공유되지 않습니다.
-- 일반 **Chat** 화면과 **Codex** 화면의 모델 선택은 서로 다를 수 있습니다. 이 설정은 Codex의 로컬 모델 제공자 선택을 대상으로 합니다.
+- 일반 **Chat** 및 음성 대화는 기존 ChatGPT 연결을 유지하며, 이 연동은 **Codex** 화면에만 적용됩니다. Ollama의 Windows 탐지기가 PowerShell을 찾을 수 있도록 설정 명령 실행 시 Windows PowerShell 경로를 보완합니다.
 - **설정** 탭에서 앱 시작 시 필수 프로그램 자동 설치를 끌 수 있습니다. 이 앱 자체는 Python 표준 라이브러리만 사용하므로 추가 pip 패키지가 필요하지 않습니다.
 
 ## 안전 관련 설정

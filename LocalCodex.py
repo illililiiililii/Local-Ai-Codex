@@ -351,17 +351,17 @@ class LocalCodexApp(tk.Tk):
         ttk.Label(self.chatgpt_tab, text="ChatGPT 데스크톱(Codex)과 로컬 AI", style="Title.TLabel").pack(anchor="w")
         ttk.Label(
             self.chatgpt_tab,
-            text="한 곳에서 전환할 수 있도록 구성했습니다. ChatGPT는 클라우드 모델을, 로컬 채팅은 Ollama 모델을 사용합니다.",
+            text="ChatGPT 데스크톱의 Codex 모델 선택기에 Ollama 모델을 추가합니다. 클라우드 모델은 그대로 유지됩니다.",
             style="Subtitle.TLabel",
         ).pack(anchor="w", pady=(2, 14))
-        notice = ttk.LabelFrame(self.chatgpt_tab, text="로컬 모델 선택기", style="Card.TLabelframe")
+        notice = ttk.LabelFrame(self.chatgpt_tab, text="Codex 모델 선택기 연동", style="Card.TLabelframe")
         notice.pack(fill="x")
         ttk.Label(
             notice,
             text=(
-                "ChatGPT 데스크톱 앱의 Codex 화면은 Ollama와 LM Studio 로컬 제공자를 지원합니다. "
-                "아래 버튼은 Codex의 로컬 제공자를 Ollama로 지정해 모델 선택기에서 설치된 로컬 모델을 사용할 수 있게 합니다. "
-                "일반 Chat 화면의 모델 선택은 OpenAI 클라우드 모델용으로 별도 동작합니다."
+                "공식 Ollama 연동을 사용해 로컬 모델과 ChatGPT 기본 모델을 같은 Codex 선택기에 표시합니다. "
+                "아래에서 선택한 설치 모델을 기본 Ollama 모델로 지정합니다. 설정 후 ChatGPT 앱을 직접 다시 시작해야 반영됩니다. "
+                "일반 Chat 및 음성 대화는 기존 ChatGPT 연결을 계속 사용합니다."
             ),
             wraplength=950,
         ).pack(anchor="w")
@@ -371,11 +371,9 @@ class LocalCodexApp(tk.Tk):
         ttk.Label(status, textvariable=self.codex_provider_status_var, style="Subtitle.TLabel").pack(anchor="w", pady=(4, 0))
         row = ttk.Frame(status)
         row.pack(anchor="w", pady=(10, 0))
-        ttk.Button(row, text="Ollama API 상태 새로고침", command=self.refresh_chat_integration).pack(side="left")
+        ttk.Button(row, text="상태 새로고침", command=self.refresh_chat_integration).pack(side="left")
         ttk.Button(row, text="Ollama 서버 시작", command=self.start_ollama).pack(side="left", padx=8)
-        ttk.Label(row, text="로컬 제공자:").pack(side="left", padx=(18, 6))
-        ttk.Combobox(row, textvariable=self.oss_provider_var, state="readonly", values=("ollama", "lmstudio"), width=13).pack(side="left")
-        ttk.Button(row, text="선택 제공자 적용", style="Accent.TButton", command=self.configure_codex_ollama).pack(side="left", padx=8)
+        ttk.Button(row, text="선택 모델을 ChatGPT에 추가", style="Accent.TButton", command=self.configure_chatgpt_ollama).pack(side="left", padx=8)
         launch = ttk.LabelFrame(self.chatgpt_tab, text="ChatGPT 데스크톱 실행", style="Card.TLabelframe")
         launch.pack(fill="x", pady=(14, 0))
         ttk.Label(launch, text="ChatGPT 실행 파일을 한 번 지정하면 여기에서 바로 열 수 있습니다.", style="Subtitle.TLabel").pack(anchor="w")
@@ -535,50 +533,69 @@ class LocalCodexApp(tk.Tk):
     def refresh_chat_integration(self) -> None:
         try:
             codex_config = CODEX_CONFIG_FILE.read_text(encoding="utf-8")
-            if re.search(r'^\s*oss_provider\s*=\s*["\']ollama["\']\s*$', codex_config, re.MULTILINE):
-                self.oss_provider_var.set("ollama")
-                self.codex_provider_status_var.set("Codex 로컬 제공자: Ollama로 설정됨")
-            elif re.search(r'^\s*oss_provider\s*=\s*["\']lmstudio["\']\s*$', codex_config, re.MULTILINE):
-                self.oss_provider_var.set("lmstudio")
-                self.codex_provider_status_var.set("Codex 로컬 제공자: LM Studio로 설정됨")
+            catalog_match = re.search(r'^\s*model_catalog_json\s*=\s*["\']([^"\']+)["\']\s*$', codex_config, re.MULTILINE)
+            base_match = re.search(r'^\s*openai_base_url\s*=\s*["\']([^"\']+)["\']\s*$', codex_config, re.MULTILINE)
+            if catalog_match and base_match and "/api/codex/v1" in base_match.group(1):
+                catalog = Path(catalog_match.group(1))
+                if catalog.exists():
+                    self.codex_provider_status_var.set("ChatGPT Codex에 Ollama 모델이 추가되어 있습니다 · 앱 재시작 후 선택 가능")
+                else:
+                    self.codex_provider_status_var.set("Ollama 연동 설정은 있으나 모델 목록 파일이 없습니다")
             else:
-                self.codex_provider_status_var.set("Codex 로컬 제공자: 설정되지 않음")
+                self.codex_provider_status_var.set("ChatGPT Codex에 Ollama 모델이 아직 추가되지 않았습니다")
         except OSError:
+            codex_config = ""
             self.codex_provider_status_var.set("Codex 설정 파일을 찾지 못했습니다")
-        provider = self.oss_provider_var.get()
-        endpoint = "http://127.0.0.1:11434/api/tags" if provider == "ollama" else "http://127.0.0.1:1234/v1/models"
+        endpoint = "http://127.0.0.1:11434/api/tags"
         try:
             with urllib.request.urlopen(endpoint, timeout=2) as response:
                 if response.status == 200:
-                    self.chat_status_var.set(f"{provider} 로컬 API 연결됨 · {endpoint}")
+                    self.chat_status_var.set(f"Ollama 로컬 API 연결됨 · {endpoint}")
                     return
         except (OSError, urllib.error.URLError):
             pass
-        self.chat_status_var.set(f"선택한 로컬 API에 연결되지 않았습니다 · {endpoint.rsplit('/', 1)[0]}")
+        self.chat_status_var.set(f"Ollama API에 연결되지 않았습니다 · {endpoint.rsplit('/', 1)[0]}")
 
-    def configure_codex_ollama(self) -> None:
-        """Keep the cloud default model intact while choosing a local Codex provider."""
+    def configure_chatgpt_ollama(self) -> None:
+        """Use Ollama's supported additive ChatGPT Desktop integration."""
+        ollama = self.resolve_command("ollama")
+        if not ollama:
+            messagebox.showerror(APP_NAME, "Ollama를 찾지 못했습니다. 프로그램 탭에서 Ollama를 먼저 설치하세요.")
+            return
+
         try:
-            existing = CODEX_CONFIG_FILE.read_text(encoding="utf-8") if CODEX_CONFIG_FILE.exists() else ""
-            pattern = r'^\s*oss_provider\s*=\s*["\'][^"\']+["\']\s*$'
-            provider = self.oss_provider_var.get().strip()
-            if provider not in ("ollama", "lmstudio"):
-                messagebox.showerror(APP_NAME, "Ollama 또는 LM Studio를 선택하세요.")
-                return
-            if re.search(pattern, existing, re.MULTILINE):
-                updated = re.sub(pattern, f'oss_provider = "{provider}"', existing, flags=re.MULTILINE)
-            else:
-                updated = f'oss_provider = "{provider}"\n' + existing
-            CODEX_CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
-            temporary = CODEX_CONFIG_FILE.with_suffix(".tmp")
-            temporary.write_text(updated, encoding="utf-8")
-            temporary.replace(CODEX_CONFIG_FILE)
-            self.settings.data["oss_provider"] = provider
-            self.settings.save()
-            self.log(f"Codex의 기본 로컬 제공자를 {provider}로 설정했습니다. ChatGPT 데스크톱을 다시 시작하면 적용됩니다.")
-            self.refresh_chat_integration()
-        except OSError as exc:
-            messagebox.showerror(APP_NAME, f"Codex 설정을 저장할 수 없습니다: {exc}")
+            with urllib.request.urlopen("http://127.0.0.1:11434/api/tags", timeout=3) as response:
+                inventory = json.loads(response.read().decode("utf-8"))
+            installed = [str(item.get("name", "")).strip() for item in inventory.get("models", []) if item.get("name")]
+        except (OSError, urllib.error.URLError, json.JSONDecodeError) as exc:
+            messagebox.showerror(APP_NAME, f"Ollama 서버에 연결할 수 없습니다. 서버를 시작한 뒤 다시 시도하세요.\n\n{exc}")
+            return
+        if not installed:
+            messagebox.showerror(APP_NAME, "설치된 Ollama 모델이 없습니다. 모델을 먼저 다운로드하세요.")
+            return
+
+        requested = self.model_var.get().strip()
+        model = requested if requested in installed else installed[0]
+        env = os.environ.copy()
+        windows_powershell = Path(os.environ.get("SystemRoot", r"C:\Windows")) / "System32" / "WindowsPowerShell" / "v1.0"
+        # Ollama's Windows launcher calls powershell.exe by name. GUI launchers
+        # may inherit a PATH without System32, causing false "not installed" errors.
+        if (windows_powershell / "powershell.exe").is_file():
+            env["PATH"] = str(windows_powershell) + os.pathsep + env.get("PATH", "")
+
+        def work() -> None:
+            self.runner.command([ollama, "launch", "chatgpt", "--config", "--model", model], env=env)
+
+            def finish() -> None:
+                self.model_var.set(model)
+                self.settings.data["model"] = model
+                self.settings.save()
+                self.refresh_chat_integration()
+                self.log("Ollama 로컬 모델과 ChatGPT 기본 모델을 Codex 선택기에 함께 구성했습니다. 앱을 직접 다시 시작하면 반영됩니다.")
+
+            self.after(0, finish)
+
+        self.runner.submit("ChatGPT Codex에 Ollama 모델 추가", work)
 
     def choose_chatgpt_executable(self) -> None:
         path = filedialog.askopenfilename(
