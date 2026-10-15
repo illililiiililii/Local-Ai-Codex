@@ -11,6 +11,7 @@ PowerShell 콘솔 런처를 Python GUI 통합 앱으로 전환한 Windows용 로
 - **의존성 준비**: Codex를 실행할 때 `package.json`과 Python의 `requirements.txt`/`pyproject.toml`/`setup.py`를 확인해 의존성을 먼저 설치합니다. npm, pnpm, Yarn lock 파일을 인식하고 Python 프로젝트에는 `.venv`를 만듭니다.
 - **Codex 실행**: Ollama launch 방식(기존 동작 호환) 또는 직접 Codex CLI 실행을 고르고, 새 터미널에서 실행하거나 이전 대화를 재개할 수 있습니다.
 - **설정과 로그**: 선택 모델, 현재 프로젝트, 컨텍스트 길이, 실행 방식은 `%LOCALAPPDATA%\LocalCodexAI\config.json`에 저장되고 실행 로그는 같은 폴더의 `manager.log`에 남습니다.
+- **화면 테마**: 상단의 **다크 모드/라이트 모드** 버튼으로 즉시 전환하며, 선택한 테마는 다음 실행에도 유지됩니다.
 
 ## 빠른 시작
 

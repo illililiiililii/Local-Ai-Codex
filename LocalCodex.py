@@ -71,6 +71,7 @@ class Settings:
         "chatgpt_executable": "",
         "oss_provider": "ollama",
         "auto_install": True,
+        "theme": "light",
     }
 
     def __init__(self) -> None:
@@ -182,6 +183,7 @@ class LocalCodexApp(tk.Tk):
         self.chatgpt_path_var = tk.StringVar(value=str(self.settings.data["chatgpt_executable"]))
         self.oss_provider_var = tk.StringVar(value=str(self.settings.data["oss_provider"]))
         self.auto_install_var = tk.BooleanVar(value=bool(self.settings.data["auto_install"]))
+        self.dark_mode = self.settings.data.get("theme") == "dark"
         self.chat_status_var = tk.StringVar(value="Ollama API 상태 확인 전")
         self.codex_provider_status_var = tk.StringVar(value="Codex 로컬 제공자 설정 확인 전")
         self.local_chat_status_var = tk.StringVar(value="준비됨")
@@ -190,6 +192,7 @@ class LocalCodexApp(tk.Tk):
         self._auto_setup_started = False
         self._configure_style()
         self._build_ui()
+        self._apply_widget_theme()
         self.protocol("WM_DELETE_WINDOW", self._close)
         PROJECTS_DIR.mkdir(parents=True, exist_ok=True)
         self.after(80, self._consume_events)
@@ -197,29 +200,92 @@ class LocalCodexApp(tk.Tk):
         self.after(1200, self.ensure_startup_prerequisites)
 
     def _configure_style(self) -> None:
-        style = ttk.Style(self)
-        if "clam" in style.theme_names():
-            style.theme_use("clam")
-        self.configure(background="#eef2f7")
-        style.configure("TFrame", background="#eef2f7")
-        style.configure("TLabel", background="#eef2f7", foreground="#172238", font=("Segoe UI", 10))
-        style.configure("Title.TLabel", background="#eef2f7", foreground="#111c31", font=("Segoe UI", 21, "bold"))
-        style.configure("Subtitle.TLabel", background="#eef2f7", foreground="#62718a", font=("Segoe UI", 9))
-        style.configure("Card.TLabelframe", background="#ffffff", bordercolor="#d8e0ec", relief="solid", padding=15)
-        style.configure("Card.TLabelframe.Label", background="#ffffff", foreground="#253653", font=("Segoe UI", 10, "bold"))
-        style.configure("TNotebook", background="#eef2f7", borderwidth=0, tabmargins=(0, 0, 0, 0))
-        style.configure("TNotebook.Tab", background="#e2e8f1", foreground="#52627a", padding=(14, 9), font=("Segoe UI", 9, "bold"))
-        style.map("TNotebook.Tab", background=[("selected", "#ffffff"), ("active", "#f7f9fc")], foreground=[("selected", "#175cd3"), ("active", "#1d2939")])
-        style.configure("Treeview", background="#ffffff", fieldbackground="#ffffff", foreground="#23334d", rowheight=29, bordercolor="#d8e0ec", font=("Segoe UI", 9))
-        style.configure("Treeview.Heading", background="#e9eef6", foreground="#3b4b63", padding=(7, 8), font=("Segoe UI", 9, "bold"))
-        style.map("Treeview", background=[("selected", "#d9e8ff")], foreground=[("selected", "#123b79")])
-        style.configure("TButton", background="#ffffff", foreground="#253653", bordercolor="#cbd5e1", padding=(10, 7), font=("Segoe UI", 9, "bold"))
-        style.map("TButton", background=[("active", "#f4f7fb"), ("disabled", "#e7ebf1")], foreground=[("disabled", "#9aa6b8")])
-        style.configure("Accent.TButton", background="#2563eb", foreground="#ffffff", bordercolor="#2563eb", padding=(13, 8), font=("Segoe UI", 9, "bold"))
-        style.map("Accent.TButton", background=[("active", "#1d4ed8"), ("disabled", "#9bb8ef")], foreground=[("disabled", "#ffffff")])
-        style.configure("TEntry", fieldbackground="#ffffff", foreground="#172238", padding=7)
-        style.configure("TCombobox", fieldbackground="#ffffff", foreground="#172238", padding=6)
-        style.configure("TCheckbutton", background="#ffffff", foreground="#253653", font=("Segoe UI", 9))
+        self.style = ttk.Style(self)
+        if "clam" in self.style.theme_names():
+            self.style.theme_use("clam")
+        self._apply_theme()
+
+    def _apply_theme(self) -> None:
+        self.colors = (
+            {
+                "bg": "#10141d", "surface": "#181f2b", "raised": "#202a39",
+                "text": "#e7edf7", "muted": "#9aa9bf", "border": "#303d50",
+                "accent": "#6c9cff", "accent_active": "#85adff", "button": "#222d3c",
+                "field": "#121925", "selection": "#294a78", "selection_text": "#ffffff",
+                "disabled": "#3c4859", "disabled_text": "#8491a4",
+            }
+            if self.dark_mode else {
+                "bg": "#eef2f7", "surface": "#ffffff", "raised": "#f7f9fc",
+                "text": "#172238", "muted": "#62718a", "border": "#d8e0ec",
+                "accent": "#2563eb", "accent_active": "#1d4ed8", "button": "#ffffff",
+                "field": "#ffffff", "selection": "#d9e8ff", "selection_text": "#123b79",
+                "disabled": "#e7ebf1", "disabled_text": "#9aa6b8",
+            }
+        )
+        c = self.colors
+        self.configure(background=c["bg"])
+        self.style.configure("TFrame", background=c["bg"])
+        self.style.configure("TLabel", background=c["bg"], foreground=c["text"], font=("Segoe UI", 10))
+        self.style.configure("Title.TLabel", background=c["bg"], foreground=c["text"], font=("Segoe UI", 21, "bold"))
+        self.style.configure("Subtitle.TLabel", background=c["bg"], foreground=c["muted"], font=("Segoe UI", 9))
+        self.style.configure("Card.TLabelframe", background=c["surface"], bordercolor=c["border"], relief="solid", padding=15)
+        self.style.configure("Card.TLabelframe.Label", background=c["surface"], foreground=c["text"], font=("Segoe UI", 10, "bold"))
+        self.style.configure("Card.TFrame", background=c["surface"])
+        self.style.configure("Card.TLabel", background=c["surface"], foreground=c["text"], font=("Segoe UI", 10))
+        self.style.configure("Card.Subtitle.TLabel", background=c["surface"], foreground=c["muted"], font=("Segoe UI", 9))
+        self.style.configure("Card.TCheckbutton", background=c["surface"], foreground=c["text"], font=("Segoe UI", 9))
+        self.style.configure("TNotebook", background=c["bg"], borderwidth=0, tabmargins=(0, 0, 0, 0))
+        self.style.configure("TNotebook.Tab", background=c["raised"], foreground=c["muted"], padding=(14, 9), font=("Segoe UI", 9, "bold"))
+        self.style.map("TNotebook.Tab", background=[("selected", c["surface"]), ("active", c["button"])], foreground=[("selected", c["accent"]), ("active", c["text"])])
+        self.style.configure("Treeview", background=c["surface"], fieldbackground=c["surface"], foreground=c["text"], rowheight=31, bordercolor=c["border"], font=("Segoe UI", 9))
+        self.style.configure("Treeview.Heading", background=c["raised"], foreground=c["muted"], padding=(8, 9), font=("Segoe UI", 9, "bold"))
+        self.style.map("Treeview", background=[("selected", c["selection"])], foreground=[("selected", c["selection_text"])])
+        self.style.configure("TButton", background=c["button"], foreground=c["text"], bordercolor=c["border"], padding=(11, 8), font=("Segoe UI", 9, "bold"))
+        self.style.map("TButton", background=[("active", c["raised"]), ("disabled", c["disabled"])], foreground=[("disabled", c["disabled_text"])])
+        self.style.configure("Accent.TButton", background=c["accent"], foreground="#ffffff", bordercolor=c["accent"], padding=(14, 9), font=("Segoe UI", 9, "bold"))
+        self.style.map("Accent.TButton", background=[("active", c["accent_active"]), ("disabled", c["disabled"])], foreground=[("disabled", c["disabled_text"])])
+        self.style.configure("TEntry", fieldbackground=c["field"], foreground=c["text"], bordercolor=c["border"], padding=8)
+        self.style.configure("TCombobox", fieldbackground=c["field"], foreground=c["text"], arrowcolor=c["muted"], bordercolor=c["border"], padding=7)
+        self.style.map("TCombobox", fieldbackground=[("readonly", c["field"])], foreground=[("readonly", c["text"])])
+        self.style.configure("TCheckbutton", background=c["surface"], foreground=c["text"], font=("Segoe UI", 9))
+        self.style.map("TCheckbutton", background=[("active", c["surface"])])
+        self.style.configure("Vertical.TScrollbar", background=c["raised"], troughcolor=c["bg"], bordercolor=c["bg"], arrowcolor=c["muted"])
+        if hasattr(self, "theme_button"):
+            self.theme_button.configure(text="☀ 라이트 모드" if self.dark_mode else "☾ 다크 모드")
+        if hasattr(self, "log_text"):
+            self._apply_widget_theme()
+
+    def _apply_widget_theme(self) -> None:
+        c = self.colors
+
+        def update(widget: tk.Misc, in_card: bool = False) -> None:
+            in_card = in_card or isinstance(widget, ttk.LabelFrame)
+            if in_card:
+                if isinstance(widget, ttk.Label):
+                    widget.configure(style="Card.Subtitle.TLabel" if widget.cget("style") in ("Subtitle.TLabel", "Card.Subtitle.TLabel") else "Card.TLabel")
+                elif isinstance(widget, ttk.Frame) and not isinstance(widget, ttk.LabelFrame):
+                    widget.configure(style="Card.TFrame")
+                elif isinstance(widget, ttk.Checkbutton):
+                    widget.configure(style="Card.TCheckbutton")
+            if isinstance(widget, tk.Text):
+                widget.configure(
+                    background=c["field"], foreground=c["text"], insertbackground=c["text"],
+                    selectbackground=c["selection"], selectforeground=c["selection_text"],
+                    relief="flat", highlightthickness=1, highlightbackground=c["border"],
+                    highlightcolor=c["accent"], padx=10, pady=9,
+                )
+                if widget is getattr(self, "local_chat_output", None):
+                    widget.tag_configure("sender", foreground=c["accent"], font=("Segoe UI", 11, "bold"))
+            for child in widget.winfo_children():
+                update(child, in_card)
+
+        update(self)
+
+    def toggle_theme(self) -> None:
+        self.dark_mode = not self.dark_mode
+        self.settings.data["theme"] = "dark" if self.dark_mode else "light"
+        self.settings.save()
+        self._apply_theme()
 
     def _build_ui(self) -> None:
         outer = ttk.Frame(self, padding=18)
@@ -231,6 +297,8 @@ class LocalCodexApp(tk.Tk):
         ttk.Button(header, text="로컬 채팅", command=lambda: self.notebook.select(self.local_chat_tab)).pack(side="right")
         ttk.Button(header, text="ChatGPT 열기", command=self.open_chatgpt).pack(side="right", padx=8)
         ttk.Label(header, textvariable=self.status_var, style="Subtitle.TLabel").pack(side="right", pady=(8, 0))
+        self.theme_button = ttk.Button(header, text="☾ 다크 모드", command=self.toggle_theme)
+        self.theme_button.pack(side="right", padx=(8, 0))
 
         self.notebook = ttk.Notebook(outer)
         self.notebook.pack(fill="both", expand=True)
@@ -968,6 +1036,7 @@ class LocalCodexApp(tk.Tk):
             "chatgpt_executable": self.chatgpt_path_var.get(),
             "oss_provider": self.oss_provider_var.get(),
             "auto_install": self.auto_install_var.get(),
+            "theme": "dark" if self.dark_mode else "light",
         })
         self.settings.save()
         self.log("설정을 저장했습니다.")
